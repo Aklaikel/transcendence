@@ -1,0 +1,170 @@
+//🧩Don't Edit this file.✨Generated in Tue Aug 01 2023 16:20:00 GMT+0100 (GMT+01:00)✨
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Game {
+  id Int @id @default(autoincrement())
+
+  firstPlayerId     Int
+  secondPlayerId    Int
+  firstPlayerScore  Int
+  secondPlayerScore Int
+
+  isFinished Boolean @default(false)
+
+  firstPlayer  User @relation("firstPlayer", fields: [firstPlayerId], references: [id])
+  secondPlayer User @relation("secondPlayer", fields: [secondPlayerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    Int
+  type      String
+
+  user         User                        @relation("userNotification", fields: [userId], references: [id])
+  notification FriendRequestNotification[] @relation("notification")
+
+  roomRotification RoomNotification[] @relation("notification")
+}
+
+model FriendRequestNotification {
+  id             Int @id @default(autoincrement())
+  notificationId Int
+  senderUserId   Int
+
+  notification Notification @relation("notification", fields: [notificationId], references: [id])
+  senderUser   User         @relation("senderUser", fields: [senderUserId], references: [id])
+}
+
+model RoomNotification {
+  id             Int    @id @default(autoincrement())
+  notificationId Int
+  senderUserId   Int
+  message        String
+
+  roomRotification Notification @relation("notification", fields: [notificationId], references: [id])
+  senderUserAtRoom User         @relation("senderUserAtRoom", fields: [senderUserId], references: [id])
+}
+
+model RoomChat {
+  id           Int           @id @default(autoincrement())
+  createAt     DateTime      @default(now())
+  updatedAt    DateTime
+  name         String        @unique
+  descreption  String
+  avatar       String?
+  type         String
+  password     String?
+  ownerId      Int
+  UsersRooms   UsersRoom[]
+  MessageRooms MessageRoom[]
+  BlockUsers   BlockUsers[]
+  userroomchat User          @relation(fields: [ownerId], references: [id])
+}
+
+model UsersRoom {
+  id        Int      @id @default(autoincrement())
+  createAt  DateTime @default(now())
+  updatedAt DateTime
+  userId    Int
+  roomId    Int
+  locked    Boolean  @default(false)
+  isadmin   Boolean  @default(false)
+  timermute String   @default("0")
+  chat      RoomChat @relation(fields: [roomId], references: [id])
+  userroom  User     @relation(fields: [userId], references: [id])
+}
+
+model BlockUsers {
+  id        Int      @id @default(autoincrement())
+  createAt  DateTime @default(now())
+  updatedAt DateTime
+  userId    Int
+  roomId    Int
+  chat      RoomChat @relation(fields: [roomId], references: [id])
+  userroom  User     @relation(fields: [userId], references: [id])
+}
+
+model MessageRoom {
+  id         Int      @id @default(autoincrement())
+  createAt   DateTime @default(now())
+  updatedAt  DateTime
+  userId     Int
+  roomId     Int
+  message    String
+  messageref RoomChat @relation(fields: [roomId], references: [id])
+  usermsg    User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createAt  DateTime @default(now())
+  updatedAt DateTime
+  lastName  String
+  firstName String
+  email     String   @unique
+  UserName  String
+  avatar    String
+  isOnline  String   @default("online")
+  firstTime Boolean  @default(true)
+  level     Float?   @default(0)
+  cover     String?
+  bio       String?
+  score     Int?     @default(0)
+
+  firstPlayer      Game[]                      @relation("firstPlayer")
+  secondPlayer     Game[]                      @relation("secondPlayer")
+  userNotification Notification[]              @relation("userNotification")
+  senderUser       FriendRequestNotification[] @relation("senderUser")
+  senderUserAtRoom RoomNotification[]          @relation("senderUserAtRoom")
+
+  RoomChats    RoomChat[]
+  UsersRooms   UsersRoom[]
+  MessageRooms MessageRoom[]
+  BlockUsers   BlockUsers[]
+
+  conversation  chat[]        @relation("chat")
+  conversation2 chat[]        @relation("chat2")
+  recChat       messageChat[] @relation("receiv")
+  sentChat      messageChat[] @relation("send")
+}
+
+model messageChat {
+  id          Int      @unique @default(autoincrement())
+  receiv      User     @relation("receiv", fields: [receiverid], references: [id])
+  receiverid  Int
+  send        User     @relation("send", fields: [senderid], references: [id])
+  senderid    Int
+  chatId      Int
+  message     String
+  mychanellID Int
+  updatedAt   DateTime
+  createdAt   DateTime @default(now())
+  Channel     chat     @relation("channel", fields: [mychanellID], references: [id])
+}
+
+model chat {
+  id         Int      @unique @default(autoincrement())
+  senderid   Int
+  receiverid Int
+  updatedAt  DateTime
+  createdAt  DateTime @default(now())
+
+  chatBlock    User          @relation("chat", fields: [senderid], references: [id])
+  channel      messageChat[] @relation("channel")
+  secondPlayer User          @relation("chat2", fields: [receiverid], references: [id])
+
+  @@unique([senderid, receiverid])
+}
